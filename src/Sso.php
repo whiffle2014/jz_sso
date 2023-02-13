@@ -1,7 +1,7 @@
 <?php
 
 
-namespace kizon;
+namespace whiffle2014;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
