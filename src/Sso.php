@@ -2,6 +2,7 @@
 
 
 namespace kizon;
+
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,44 +15,49 @@ class Sso
 {
     public function handle(Request $request, Closure $next, $permission = null)
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
         try {
             //获取token
-            $sessionId = $_COOKIE['PHPSESSID'] ?? '';
-            $redis = new Redis();
-            $token = $redis::get($sessionId);
-            if(empty($token)) {
+            $request = request();
+            $header = $request->header('Authorization', '');
+
+            if (empty($header)) {
                 return response()->json(['data' => [], 'code' => "00002", 'message' => "token is not defind", 'status' => 'failed']);
             }
+            if (!preg_match('/[Bearer|bearer]\\s(\\S+)/', $header, $matches)) {
+                return response()->json(['data' => [], 'code' => "00002", 'message' => "token is not defind", 'status' => 'failed']);
+            }
+            $token = $matches[1];
+            if (empty($token)) {
+                return response()->json(['data' => [], 'code' => "00002", 'message' => "token is not defind", 'status' => 'failed']);
+            }
+
             //获取域名判断当前系统--占位
             $domain = 'http://' . $_SERVER['HTTP_HOST'];
             $systemPrefix = DB::connection("auth_mysql")->table("domain")->where("name", $domain)->where("status", 1)->first();
-            if(empty($systemPrefix)) {
+            if (empty($systemPrefix)) {
                 return response()->json(['data' => [], 'code' => "00003", 'message' => "domain is not defind", 'status' => 'failed']);
             }
             //拼接权限名称--系统前缀+路由
-            if(empty($systemPrefix->route_prefix)) {
+            if (empty($systemPrefix->route_prefix)) {
                 return response()->json(['data' => [], 'code' => "00004", 'message' => "route_prefix is not defind", 'status' => 'failed']);
             }
-            $routName = str_replace('/','-', str_replace($systemPrefix->route_prefix . '/','', $request->path()));
-            if(empty($routName)) {
+            $routName = str_replace('/', '-', str_replace($systemPrefix->route_prefix . '/', '', $request->path()));
+            if (empty($routName)) {
                 return response()->json(['data' => [], 'code' => "00001", 'message' => "authenticate is error", 'status' => 'failed']);
             }
+
             //权限名称: 系统前缀 + 路由名称
             $authPostData['permission'] = $systemPrefix->system_prefix . '-' . $routName;
             $result = $this->send(config('app.auth_url') . '/api/auth', $token, json_encode($authPostData));
             $data = json_decode($result, true);
-            if($data['status'] === 'success' && $data['code'] === 200) {
+            if ($data['status'] === 'success' && $data['code'] === 200) {
                 return $next($request);
             } else {
                 return $data;
             }
         } catch (\Exception $e) {
-            Log::info('认证错误!',['error_msg' => $e->getMessage(), 'error_info' => $e->getTraceAsString()]);
-            return response()->json(['data' => [], 'code' => "500", 'message' => "authenticate is error", 'status' => 'failed']);
+            Log::info('认证错误!', ['error_msg' => $e->getMessage(), 'error_info' => $e->getTraceAsString()]);
+            return response()->json(['data' => [], 'code' => "401", 'message' => "authenticate is error", 'status' => 'failed'], '401');
         }
     }
 
@@ -80,8 +86,8 @@ class Sso
         // 设置请求头
         curl_setopt($curl, CURLOPT_HTTPHEADER, $header);
 
-        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE );
-        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, FALSE );
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, FALSE);
 
         //设置post方式提交
         curl_setopt($curl, CURLOPT_POST, 1);
