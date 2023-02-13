@@ -1,0 +1,21 @@
+{
+    "name": "jinzhongfoods/sso",
+    "description": "集中认证",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "jinzhongfoods",
+            "email": "1928485739@qq.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=7.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "jinzhongfoods\\": "src/"
+        }
+    }
+}
