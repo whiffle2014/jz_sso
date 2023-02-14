@@ -21,29 +21,29 @@ class Sso
             $header = $request->header('Authorization', '');
 
             if (empty($header)) {
-                return response()->json(['data' => [], 'code' => "00002", 'message' => "token is not defind", 'status' => 'failed']);
+                return response()->json(['data' => [], 'code' => "00002", 'message' => "token is not defind", 'status' => 'failed'], '401');
             }
             if (!preg_match('/[Bearer|bearer]\\s(\\S+)/', $header, $matches)) {
-                return response()->json(['data' => [], 'code' => "00002", 'message' => "token is not defind", 'status' => 'failed']);
+                return response()->json(['data' => [], 'code' => "00002", 'message' => "token is not defind", 'status' => 'failed'], '401');
             }
             $token = $matches[1];
             if (empty($token)) {
-                return response()->json(['data' => [], 'code' => "00002", 'message' => "token is not defind", 'status' => 'failed']);
+                return response()->json(['data' => [], 'code' => "00002", 'message' => "token is not defind", 'status' => 'failed'], '401');
             }
 
             //获取域名判断当前系统--占位
             $domain = 'http://' . $_SERVER['HTTP_HOST'];
             $systemPrefix = DB::connection("auth_mysql")->table("domain")->where("name", $domain)->where("status", 1)->first();
             if (empty($systemPrefix)) {
-                return response()->json(['data' => [], 'code' => "00003", 'message' => "domain is not defind", 'status' => 'failed']);
+                return response()->json(['data' => [], 'code' => "00003", 'message' => "domain is not defind", 'status' => 'failed'], '401');
             }
             //拼接权限名称--系统前缀+路由
             if (empty($systemPrefix->route_prefix)) {
-                return response()->json(['data' => [], 'code' => "00004", 'message' => "route_prefix is not defind", 'status' => 'failed']);
+                return response()->json(['data' => [], 'code' => "00004", 'message' => "route_prefix is not defind", 'status' => 'failed'], '401');
             }
             $routName = str_replace('/', '-', str_replace($systemPrefix->route_prefix . '/', '', $request->path()));
             if (empty($routName)) {
-                return response()->json(['data' => [], 'code' => "00001", 'message' => "authenticate is error", 'status' => 'failed']);
+                return response()->json(['data' => [], 'code' => "00001", 'message' => "authenticate is error", 'status' => 'failed'], '401');
             }
 
             //权限名称: 系统前缀 + 路由名称
