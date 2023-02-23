@@ -29,6 +29,10 @@ class Sso
             $token = $matches[1];
             if (empty($token)) {
                 return response()->json(['data' => [], 'code' => "00002", 'message' => "token is not defind", 'status' => 'failed'], '401');
+            } else {
+                if (!Redis::get(md5($token))) {
+                    return response()->json(['data' => [], 'code' => "00002", 'message' => "token is not defind", 'status' => 'failed'], '401');
+                }
             }
 
             //获取域名判断当前系统--占位
@@ -45,15 +49,15 @@ class Sso
             if (empty($routName)) {
                 return response()->json(['data' => [], 'code' => "00001", 'message' => "authenticate is error", 'status' => 'failed'], '401');
             }
-
             //权限名称: 系统前缀 + 路由名称
             $authPostData['permission'] = $systemPrefix->system_prefix . '-' . $routName;
             $result = $this->send(config('app.auth_url') . '/api/auth', $token, json_encode($authPostData));
             $data = json_decode($result, true);
+
             if ($data['status'] === 'success' && $data['code'] === 200) {
                 return $next($request);
             } else {
-                return $data;
+                return response()->json(['data' => [], 'code' => "401", 'message' => $data['message'], 'status' => $data['status']], 200);
             }
         } catch (\Exception $e) {
             Log::info('认证错误!', ['error_msg' => $e->getMessage(), 'error_info' => $e->getTraceAsString()]);
