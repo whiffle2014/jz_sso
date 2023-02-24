@@ -29,10 +29,6 @@ class Sso
             $token = $matches[1];
             if (empty($token)) {
                 return response()->json(['data' => [], 'code' => "00002", 'message' => "token is not defind", 'status' => 'failed'], '401');
-            } else {
-                if (!Redis::get(md5($token))) {
-                    return response()->json(['data' => [], 'code' => "00002", 'message' => "token is not defind", 'status' => 'failed'], '401');
-                }
             }
 
             //获取域名判断当前系统--占位
@@ -49,17 +45,22 @@ class Sso
             if (empty($routName)) {
                 return response()->json(['data' => [], 'code' => "00001", 'message' => "authenticate is error", 'status' => 'failed'], '401');
             }
+
             //权限名称: 系统前缀 + 路由名称
             $authPostData['permission'] = $systemPrefix->system_prefix . '-' . $routName;
-            $result = $this->send(config('app.auth_url') . '/api/auth', $token, json_encode($authPostData));
-            $data = json_decode($result, true);
+            $curldata = $this->send(config('app.auth_url') . '/api/auth', $token, json_encode($authPostData));
 
-            if ($data['status'] === 'success' && $data['code'] === 200) {
+            if ($curldata['code'] != '200') {
+                return response()->json($curldata['data'], $curldata['code']);
+            }
+
+            if ($curldata['data']['status'] === 'success' && $curldata['data']['code'] === 200) {
                 return $next($request);
             } else {
-                return response()->json(['data' => [], 'code' => "401", 'message' => $data['message'], 'status' => $data['status']], 200);
+                return $curldata['data'];
             }
         } catch (\Exception $e) {
+
             Log::info('认证错误!', ['error_msg' => $e->getMessage(), 'error_info' => $e->getTraceAsString()]);
             return response()->json(['data' => [], 'code' => "401", 'message' => "authenticate is error", 'status' => 'failed'], '401');
         }
@@ -98,7 +99,7 @@ class Sso
         curl_setopt($curl, CURLOPT_POSTFIELDS, $authPostData);
         //执行命令
         $data = curl_exec($curl);
-
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         // 显示错误信息
         if (curl_error($curl)) {
             print "Error: " . curl_error($curl);
@@ -106,6 +107,7 @@ class Sso
             // 打印返回的内容
             curl_close($curl);
         }
-        return $data;
+
+        return ['data' => json_decode($data, true), 'code' => $httpCode];
     }
 }
