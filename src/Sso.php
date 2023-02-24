@@ -24,11 +24,11 @@ class Sso
                 return response()->json(['data' => [], 'code' => "00002", 'message' => "token is not defind", 'status' => 'failed'], '401');
             }
             if (!preg_match('/[Bearer|bearer]\\s(\\S+)/', $header, $matches)) {
-                return response()->json(['data' => [], 'code' => "00002", 'message' => "token is not defind", 'status' => 'failed'], '401');
+                return response()->json(['data' => [], 'code' => "00005", 'message' => "token is not defind", 'status' => 'failed'], '401');
             }
             $token = $matches[1];
             if (empty($token)) {
-                return response()->json(['data' => [], 'code' => "00002", 'message' => "token is not defind", 'status' => 'failed'], '401');
+                return response()->json(['data' => [], 'code' => "00006", 'message' => "token is not defind", 'status' => 'failed'], '401');
             }
 
             //获取域名判断当前系统--占位
