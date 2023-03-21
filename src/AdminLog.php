@@ -28,7 +28,7 @@ class AdminLog
         if (in_array($path, $no_log_routers)) {
             return;
         }
-        if ($request->isMethod('get') && $user) {
+        if (!$request->isMethod('get') && $user) {
             self::writeLog($request, $response);
         }
     }
