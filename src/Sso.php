@@ -71,7 +71,7 @@ class Sso
         $header = array(
             'Content-Type: application/json',
             'Accept-Charset: UTF-8',
-            'Authorization: bearer ' . $token,
+            'Authorization: Bearer ' . $token,
         );
 
         //初始化
