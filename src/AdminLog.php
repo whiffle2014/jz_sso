@@ -44,7 +44,7 @@ class AdminLog
             'method' => $request->method(),
             'ip' => $request->ip(),
             'request' => $request->all(),
-            'response' => json_decode($response->getOriginalContent(), true),
+            'response' => is_string($response->getOriginalContent()) ? json_decode($response->getOriginalContent(), true) : $response->getOriginalContent(),
             'status' => $response->status(),
             'created_at' => Date('Y-m-d H:i:s'),
             'sys' => config('app.sys'),
